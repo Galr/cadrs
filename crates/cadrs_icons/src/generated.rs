@@ -6,6 +6,7 @@ icons! {
     SWEEP => ("sweep", Solid, "Sweep"),
     LOFT => ("loft", Solid, "Loft"),
     THICKEN => ("thicken", Solid, "Thicken"),
+    TSPLINE_FORM => ("tspline-form", Solid, "T-spline form"),
     ENCLOSE => ("enclose", Solid, "Enclose"),
     FILLET => ("fillet", Solid, "Fillet"),
     CHAMFER => ("chamfer", Solid, "Chamfer"),

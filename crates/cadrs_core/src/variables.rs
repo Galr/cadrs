@@ -639,6 +639,7 @@ pub fn slots(kind: &mut FeatureKind, f: &mut dyn FnMut(Slot<'_>)) {
         | FeatureKind::Split(_)
         | FeatureKind::Mirror(_)
         | FeatureKind::Import(_)
+        | FeatureKind::TSplineForm(_)
         | FeatureKind::Image(_)
         | FeatureKind::Derived(_)
         | FeatureKind::Composite(_)

@@ -24,6 +24,12 @@ build parts from features, put them together in assemblies, and make drawings fr
   (counterbore, countersink, tapped; ISO and ANSI tables), linear and circular patterns,
   mirror, booleans, Transform, planes, mate connectors, thicken, fill and helix. Every feature
   can be edited later, and the part rebuilds.
+- **T-spline Form**: freeform bodies modelled as T-splines, as in TForm: start from a plane,
+  cylinder or torus (or drop a `.tform.json` from TForm), then drag the control cage's points,
+  edges and faces, insert edge loops and subdivide faces (shape kept exactly), with optional
+  mirror symmetry. Each body is one exact NURBS face: a surface, or a solid when it closes, that
+  later features (thicken, fillet, booleans) build on. `export_file` to a `.tform.json` takes
+  the forms back to TForm.
 - **Assemblies**: instances, fastened, revolute, slider, cylindrical, planar and other mates,
   a triad to move parts, mate connectors, exploded views and a bill of materials.
 - **Drawings**: standard and projected views, sections, dimensions, annotations, callouts

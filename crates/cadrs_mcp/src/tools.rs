@@ -279,7 +279,11 @@ pub struct AddFeature {
     /// chamfer, hole, boss or groove taken away) or MoveFace ({"faces": [refs], "distance": mm}:
     /// faces offset along their outward normals, negative inward: a wall moved, a bore's radius
     /// changed), or Simplify ({"faces": [a face of each part]}: faces and edges on the same
-    /// surface merged, which repairs imported parts split along seams).
+    /// surface merged, which repairs imported parts split along seams), or a T-spline form:
+    /// FormPlane, FormCylinder or FormTorus (TForm's primitives; {"bodies": [{"name", "tspline":
+    /// a tform-tspline, Z up}]} replaces them). import_file reads a TForm document
+    /// (.tform.json) as a form, and export_file to a .tform.json writes the active Part
+    /// Studio's forms for TForm.
     #[serde(rename = "type")]
     pub kind: String,
     /// The feature's fields as JSON, merged over the type's defaults (so only the fields that
@@ -435,8 +439,9 @@ pub struct ExportStep {
 /// Exports the active tab's parts.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct ExportFile {
-    /// Where to write the file; its extension picks the format: .step, .igs, .brep, .stl, .obj
-    /// or .glb (glTF binary, with each part's colour, in metres with +Y up).
+    /// Where to write the file; its extension picks the format: .step, .igs, .brep, .stl, .obj,
+    /// .glb (glTF binary, with each part's colour, in metres with +Y up) or .tform.json (the
+    /// tab's T-spline forms as a TForm document, Y up).
     pub path: String,
 }
 

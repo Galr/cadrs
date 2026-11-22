@@ -2345,6 +2345,7 @@ dependencies = [
  "cadrs_router",
  "cadrs_sheetmetal",
  "cadrs_sketch",
+ "cadrs_tspline",
  "cadrs_ui",
  "cadrs_vars",
  "chrono",
@@ -2402,6 +2403,7 @@ dependencies = [
  "cadrs_render",
  "cadrs_sheetmetal",
  "cadrs_sketch",
+ "cadrs_tspline",
  "cadrs_vars",
  "directories",
  "earcutr",
@@ -2695,6 +2697,14 @@ dependencies = [
  "slotmap",
  "ttf-parser",
  "uuid",
+]
+
+[[package]]
+name = "cadrs_tspline"
+version = "0.2.9"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

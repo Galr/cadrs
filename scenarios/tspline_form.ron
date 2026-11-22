@@ -1,0 +1,53 @@
+// T-spline Form (TForm's form modelling in cadrs, `crate::tspline_ui`): a torus form, refined
+// and edited in the view.
+// 01 the Form menu on the toolbar: Plane, Cylinder and Torus form, and Open TForm file….
+// 02 Torus form: a solid ring (TForm's torus, radii 40 and 14) with its control cage over it,
+//    the dialog in Edit form mode.
+// 03 Subdivide, the pointer over a face on the outside of the ring: the face outlined and its
+//    split previewed.
+// 04 the face subdivided (shape kept): new points and T-junctions in the cage, the ring as it
+//    was.
+// 05 Insert edge over a face: the loop's preview runs round the ring.
+// 06 Edit form: the cage point at (59.5, 0, 0) dragged out along X: the ring bulges there.
+// 07 accepted: Form 1 in the feature list with its own icon, one solid part.
+Scenario(
+    start: Some("document"),
+    steps: [
+        WaitFor("document-shell"),
+        Custom("view 30 35 0 0 0 0.16"),
+        Click(ui("form")),
+        WaitFor("form-menu"),
+        Hover(ui("form-menu-torus")),
+        Wait(3),
+        Screenshot("01-form-menu"),
+        Click(ui("form-menu-torus")),
+        WaitFor("form-dialog"),
+        MoveTo(1500, 900),
+        Wait(10),
+        Screenshot("02-torus-cage"),
+        Click(ui("form-mode-2")),
+        Wait(3),
+        MoveTo(1500, 900),
+        Hover(xyz(37.5, 37.5, 0)),
+        Wait(3),
+        Screenshot("03-subdivide-hover"),
+        Click(xyz(37.5, 37.5, 0)),
+        MoveTo(1500, 900),
+        Wait(10),
+        Screenshot("04-subdivided"),
+        Click(ui("form-mode-1")),
+        Wait(3),
+        Hover(xyz(-37.5, -37.5, 0)),
+        Wait(3),
+        Screenshot("05-insert-edge-hover"),
+        Click(ui("form-mode-0")),
+        Wait(3),
+        Drag(xyz(59.5, 0, 0), xyz(85, 0, 0)),
+        MoveTo(1500, 900),
+        Wait(10),
+        Screenshot("06-point-dragged"),
+        Click(ui("form-dialog-accept")),
+        Wait(10),
+        Screenshot("07-accepted"),
+    ],
+)

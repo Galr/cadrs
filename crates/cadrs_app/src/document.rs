@@ -1651,6 +1651,7 @@ fn part_studio_toolbar(tb: &mut ChildSpawnerCommands, t: &Theme) {
             ("sweep", "sweep", false, "shell-tool-sweep"),
             ("loft", "loft", false, "shell-tool-loft"),
             ("thicken", "thicken", true, "shell-tool-thicken"),
+            ("form", "tspline-form", true, "shell-tool-tspline-form"),
         ],
         &[
             ("fillet", "fillet", true, "shell-tool-fillet"),
@@ -1733,6 +1734,51 @@ fn part_studio_toolbar(tb: &mut ChildSpawnerCommands, t: &Theme) {
                     observe(|_: On<Activate>, mut commands: Commands| {
                         commands.queue(crate::revolve::begin_revolve);
                     }),
+                ));
+                continue;
+            }
+            if *name == "form" {
+                // T-spline Form (TForm): a primitive or a TForm document, from its menu.
+                tb.spawn((
+                    ToolButton::new(*name, *icon_name)
+                        .dropdown(true)
+                        .tooltip(tr(tip))
+                        .build(t),
+                    observe(
+                        |a: On<Activate>,
+                         q: Query<(&ComputedNode, &UiGlobalTransform)>,
+                         theme: Res<Theme>,
+                         mut commands: Commands| {
+                            let at = q.get(a.entity).map_or(Vec2::ZERO, |(n, t)| {
+                                let s = n.inverse_scale_factor();
+                                let size = n.size() * s;
+                                t.translation * s + Vec2::new(-size.x / 2.0, size.y / 2.0 + 2.0)
+                            });
+                            let anchor = cadrs_ui::menu::open_context_menu(
+                                &mut commands,
+                                at,
+                                form_menu().build(&theme),
+                            );
+                            commands.entity(anchor).observe(
+                                |ev: On<MenuAction>, mut commands: Commands| {
+                                    let item = ev.item.clone();
+                                    commands.queue(move |world: &mut World| match item.as_str() {
+                                        "form-menu-plane" => {
+                                            crate::tspline_ui::begin_form(world, "plane")
+                                        }
+                                        "form-menu-cylinder" => {
+                                            crate::tspline_ui::begin_form(world, "cylinder")
+                                        }
+                                        "form-menu-torus" => {
+                                            crate::tspline_ui::begin_form(world, "torus")
+                                        }
+                                        "form-menu-open" => crate::tspline_ui::open_picker(world),
+                                        _ => {}
+                                    });
+                                },
+                            );
+                        },
+                    ),
                 ));
                 continue;
             }
@@ -2047,6 +2093,18 @@ fn sheet_metal_menu() -> Menu {
 }
 
 /// The pattern button's menu (PS22.1): Mirror has its own button, as in Onshape's toolbar.
+fn form_menu() -> Menu {
+    Menu::new("form-menu")
+        .min_width(180.0)
+        .item(MenuItem::new("form-menu-plane", tr("shell-tool-tspline-plane")).icon("tspline-form"))
+        .item(
+            MenuItem::new("form-menu-cylinder", tr("shell-tool-tspline-cylinder"))
+                .icon("tspline-form"),
+        )
+        .item(MenuItem::new("form-menu-torus", tr("shell-tool-tspline-torus")).icon("tspline-form"))
+        .item(MenuItem::new("form-menu-open", tr("shell-tool-tspline-open")).icon("file-import"))
+}
+
 fn pattern_menu() -> Menu {
     Menu::new("pattern-menu")
         .min_width(180.0)
@@ -3682,6 +3740,8 @@ enum RowKind {
     Transform,
     /// A file's parts: STEP, IGES or STL (Onshape import; P3F.2).
     Import,
+    /// A T-spline Form (TForm's freeform bodies).
+    TSplineForm,
     Image,
     /// P3G.4.
     Derived,
@@ -3735,6 +3795,7 @@ impl RowKind {
             RowKind::Transform => "transform",
             RowKind::Composite => "composite-part",
             RowKind::Import => "file-import",
+            RowKind::TSplineForm => "tspline-form",
             RowKind::Image => "image",
             RowKind::Thicken => "thicken",
             // cadrs_icons has no helix or fill icon yet (recorded in PROGRESS.md).
@@ -3897,6 +3958,7 @@ fn rebuild_feature_rows(
                     cadrs_core::FeatureKind::Transform(_) => RowKind::Transform,
                     cadrs_core::FeatureKind::Composite(_) => RowKind::Composite,
                     cadrs_core::FeatureKind::Import(_) => RowKind::Import,
+                    cadrs_core::FeatureKind::TSplineForm(_) => RowKind::TSplineForm,
                     cadrs_core::FeatureKind::Image(_) => RowKind::Image,
                     cadrs_core::FeatureKind::Derived(_) => RowKind::Derived,
                     cadrs_core::FeatureKind::Thicken(_) => RowKind::Thicken,
@@ -4780,6 +4842,8 @@ pub fn edit_feature(world: &mut World, id: FeatureId) {
         crate::sheetmetal_joint_ui::edit(world, id);
     } else if matches!(kind, cadrs_core::FeatureKind::Import(_)) {
         crate::import_dialog::edit_import(world, id);
+    } else if matches!(kind, cadrs_core::FeatureKind::TSplineForm(_)) {
+        crate::tspline_ui::edit_form(world, id);
     } else if matches!(kind, cadrs_core::FeatureKind::Extrude(_)) {
         crate::extrude::edit_extrude(world, id);
     } else if matches!(kind, cadrs_core::FeatureKind::Revolve(_)) {

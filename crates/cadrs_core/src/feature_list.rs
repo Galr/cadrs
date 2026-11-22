@@ -69,6 +69,7 @@ pub fn type_label(kind: &FeatureKind) -> &'static str {
         FeatureKind::SheetMetal(x) => x.label(),
         FeatureKind::SheetMetalTool(x) => x.label(),
         FeatureKind::FlatExtrude(_) => "Extrude",
+        FeatureKind::TSplineForm(_) => "T-spline form",
     }
 }
 

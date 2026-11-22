@@ -27,6 +27,8 @@ cadrs_drawing.workspace = true
 cadrs_idf.workspace = true
 cadrs_eda.workspace = true
 cadrs_sheetmetal.workspace = true
+# The T-spline Form feature (`tspline_form`).
+cadrs_tspline.workspace = true
 nalgebra.workspace = true
 serde.workspace = true
 uuid.workspace = true

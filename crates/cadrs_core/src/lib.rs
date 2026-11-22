@@ -77,6 +77,7 @@ pub mod solid;
 pub mod store;
 pub mod studio;
 pub mod surfacing;
+pub mod tspline_form;
 pub mod tab_package;
 pub mod tab_tree;
 pub mod thread;

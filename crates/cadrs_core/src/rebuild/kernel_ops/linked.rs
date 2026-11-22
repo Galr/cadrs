@@ -2,7 +2,9 @@
 //! list, a file ([`crate::import`]). It makes new parts through `finish` and then gives them the
 //! file's body names; it doesn't use up a "Part N" number, as in Onshape. (The Derived feature,
 //! which the importer also uses, is rebuilt by `kernel_ops/derived.rs`.) IGES files, and STEP
-//! files read with their assembly structure (P3F.2), are read in `import.rs`.
+//! files read with their assembly structure (P3F.2), are read in `import.rs`. The T-spline
+//! Form feature ([`crate::tspline_form`]) makes its parts here too: its models are stored with
+//! the document as an import's file is.
 
 use super::*;
 use cadrs_kernel::Kernel;
@@ -11,6 +13,7 @@ use cadrs_sketch::{FaceName, FaceOrigin};
 use nalgebra::Point3;
 
 use crate::import::{ImportFeature, ImportFormat, ImportMode};
+use cadrs_tspline::TSpline;
 
 /// A new part of a linked feature: its id, piece, name, kind, palette entry and inherited
 /// settings.
@@ -313,6 +316,115 @@ impl Rebuilder {
                     props.appearance = Some(c);
                     Arc::new(props)
                 }),
+                connectors: Vec::new(),
+            });
+        }
+        let mut out = self.place_linked(id, made, state)?;
+        out.warning = warning;
+        Ok(out)
+    }
+
+    /// The T-spline Form feature: each body's T-spline as one exact NURBS face, a surface part,
+    /// or a solid when the face closes (a T-spline closed in both directions).
+    pub(in crate::rebuild) fn tspline_form(
+        &mut self,
+        id: FeatureId,
+        x: &crate::tspline_form::TSplineFormFeature,
+        state: &Arc<State>,
+    ) -> Result<Output, String> {
+        if let Some(p) = x.problem() {
+            return Err(p.into());
+        }
+        let splines = x.splines()?;
+        let mut bodies: Vec<(BodyId, String, bool)> = Vec::new();
+        let release = |k: &mut cadrs_kernel::DefaultKernel, b: &[(BodyId, String, bool)]| {
+            b.iter().for_each(|(b, _, _)| k.release(*b))
+        };
+        for (name, mut ts) in splines {
+            let closed = ts.per_s && ts.per_t;
+            let nurbs = match ts.to_nurbs() {
+                Ok(n) => n,
+                Err(e) => {
+                    release(&mut self.kernel, &bodies);
+                    return Err(format!("{name}: {e}"));
+                }
+            };
+            let surface = crate::tspline_form::kernel_surface(&nurbs);
+            let sheet = match self.kernel.bspline_face(&surface, None) {
+                Ok(r) => r.bodies[0],
+                Err(e) => {
+                    release(&mut self.kernel, &bodies);
+                    return Err(format!("{name}: the surface could not be built: {e}"));
+                }
+            };
+            if closed {
+                // a closed sheet: the solid it bounds
+                match self.kernel.sew_solid(&[sheet], 1e-6) {
+                    Ok(r) => {
+                        self.kernel.release(sheet);
+                        bodies.push((r.bodies[0], name, true));
+                        continue;
+                    }
+                    Err(_) => {
+                        bodies.push((sheet, name, false));
+                        continue;
+                    }
+                }
+            }
+            bodies.push((sheet, name, false));
+        }
+        let warning = bodies
+            .iter()
+            .zip(x.bodies.iter())
+            .find(|((_, _, solid), b)| {
+                !*solid && TSpline::try_from(&b.tspline).is_ok_and(|t| t.per_s && t.per_t)
+            })
+            .map(|((_, name, _), _)| {
+                format!("{name} is closed but did not make a solid: it is a surface")
+            });
+        let mut made = Vec::new();
+        for (k, (body, name, _)) in bodies.iter().enumerate() {
+            let n = self.kernel.faces(*body).map(|f| f.len()).unwrap_or(0);
+            let faces = (0..n)
+                .map(|i| {
+                    FaceName::new(
+                        id.0,
+                        FaceOrigin::Imported {
+                            body: k as u32,
+                            face: i as u32,
+                        },
+                    )
+                })
+                .collect();
+            let names = match self.linked_names(*body, faces) {
+                Ok(n) => n,
+                Err(e) => {
+                    release(&mut self.kernel, &bodies);
+                    return Err(e);
+                }
+            };
+            let solid = self.kernel.solid_count(*body).unwrap_or(0) > 0;
+            let volume = self
+                .kernel
+                .mass_properties(*body)
+                .map(|m| m.volume)
+                .unwrap_or(0.0);
+            made.push(Linked {
+                id: PartId::new(id, k as u32),
+                piece: Piece {
+                    body: *body,
+                    names,
+                    from: HashSet::new(),
+                    volume,
+                },
+                name: name.clone(),
+                kind: if solid {
+                    PartKind::Solid
+                } else {
+                    PartKind::Surface
+                },
+                palette: None,
+                derived: None,
                 connectors: Vec::new(),
             });
         }

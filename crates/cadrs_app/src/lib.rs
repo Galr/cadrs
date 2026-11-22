@@ -51,6 +51,7 @@ pub mod hidden_edges;
 pub mod history_panel;
 pub mod identity;
 pub mod image_dialog;
+pub mod tspline_ui;
 pub mod import_dialog;
 pub mod import_file;
 pub mod landing;
@@ -1052,6 +1053,7 @@ impl Plugin for CadrsAppPlugin {
                 file_drop::FileDropPlugin,
                 drop_import::DropImportPlugin,
                 image_dialog::ImageDialogPlugin,
+                tspline_ui::TSplineUiPlugin,
                 app_icon::AppIconPlugin,
                 window_title::WindowTitlePlugin,
             ))

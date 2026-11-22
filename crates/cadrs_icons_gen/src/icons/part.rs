@@ -14,6 +14,7 @@ pub fn icons() -> Vec<Def> {
         def("sweep", Solid, "Sweep", sweep),
         def("loft", Solid, "Loft", loft),
         def("thicken", Solid, "Thicken", thicken),
+        def("tspline-form", Solid, "T-spline form", tspline_form),
         def("enclose", Solid, "Enclose", enclose),
         def("fillet", Solid, "Fillet", fillet),
         def("chamfer", Solid, "Chamfer", chamfer),
@@ -286,6 +287,56 @@ fn thicken() -> Vec<String> {
         poly(&sheet, TOP, ""),
         poly(&sheet, ACCENT, SEL),
     ]
+}
+
+fn tspline_form() -> Vec<String> {
+    // Output: a freeform surface (accent) bulging up under its control cage, whose points are
+    // small squares; the raised middle point, the one being dragged, is the accent.
+    let o = (9.6, 9.4);
+    let p = projector(o);
+    let (l, w) = (10.0, 8.0);
+    let bump = |x: f64, y: f64| 3.0 * (PI * x / l).sin() * (PI * y / w).sin();
+    let n = 20;
+    let at = |x: f64, y: f64| p(x, y, bump(x, y));
+    let side =
+        |f: &dyn Fn(f64) -> P| -> Vec<P> { (0..=n).map(|i| f(i as f64 / n as f64)).collect() };
+    let outline = cat(&[
+        &side(&|u| at(u * l, 0.0)),
+        &side(&|u| at(l, u * w)),
+        &side(&|u| at(l - u * l, w)),
+        &side(&|u| at(0.0, w - u * w)),
+    ]);
+    let cage = |i: usize, j: usize| {
+        let (x, y) = (l * i as f64 / 2.0, w * j as f64 / 2.0);
+        p(x, y, if i == 1 && j == 1 { 7.0 } else { 0.0 })
+    };
+    let mut els: Vec<String> = vec![poly(&outline, TOP, ""), poly(&outline, ACCENT, SEL)];
+    for i in 0..3 {
+        for j in 0..3 {
+            if i < 2 {
+                els.push(seg(cage(i, j), cage(i + 1, j), r#"stroke-width="0.7""#));
+            }
+            if j < 2 {
+                els.push(seg(cage(i, j), cage(i, j + 1), r#"stroke-width="0.7""#));
+            }
+        }
+    }
+    for i in 0..3 {
+        for j in 0..3 {
+            let (x, y) = cage(i, j);
+            let fill = if i == 1 && j == 1 { ACCENT } else { TOP };
+            els.push(rect(
+                x - 0.8,
+                y - 0.8,
+                1.6,
+                1.6,
+                0.0,
+                fill,
+                r#"stroke-width="0.7""#,
+            ));
+        }
+    }
+    els
 }
 
 fn enclose() -> Vec<String> {

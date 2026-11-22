@@ -91,6 +91,9 @@ pub fn close_other_sessions(world: &mut World) {
     if world.contains_resource::<crate::sketch::SketchSession>() {
         crate::sketch::finish_session(world);
     }
+    if world.contains_resource::<crate::tspline_ui::FormSession>() {
+        crate::tspline_ui::finish(world);
+    }
 }
 
 /// Where the picker starts: `$CADRS_IMPORT_DIR`, else the working directory.

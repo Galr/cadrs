@@ -8,6 +8,7 @@
 //! | Picture: PNG, JPEG, GIF | (note) | an Image ([`crate::picture`]) | (note) | (note) |
 //! | Model: STEP, IGES, BREP | a new document ([`crate::import_file`]) | an Import ([`crate::import_dialog`]) | (note) | new tabs ([`crate::import_file`]) |
 //! | Model: STL | a new document | an Import | (note) | (note) |
+//! | TForm document (`.tform.json`) | (note) | a T-spline Form ([`crate::tspline_ui`]) | (note) | (note) |
 //!
 //! - **Drawings** ([`cadrs_core::vector_import`]) are centred where they are dropped: in a Part
 //!   Studio, on the default plane facing the view most (as pictures are), as a new sketch
@@ -54,10 +55,19 @@ pub enum DropKind {
     /// STEP, IGES or BREP.
     Model,
     Mesh,
+    /// A TForm document: T-spline bodies.
+    TForm,
 }
 
 impl DropKind {
     pub fn of_path(path: &Path) -> Option<Self> {
+        if path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .is_some_and(cadrs_core::tspline_form::is_tform_file)
+        {
+            return Some(Self::TForm);
+        }
         if path
             .extension()
             .is_some_and(|e| e.eq_ignore_ascii_case("cadrs"))
@@ -164,6 +174,15 @@ pub fn dropped(world: &mut World, paths: Vec<PathBuf>) {
             }
             (DropKind::Drawing, Page::PartStudio | Page::Sketch) => drawings.push(path),
             (DropKind::Picture, Page::PartStudio) => pictures.push(path),
+            (DropKind::TForm, Page::PartStudio) => {
+                if let Err(e) = crate::tspline_ui::insert_file(world, &path) {
+                    notes.push(Notification::warning(format!("{name}: {e}")));
+                }
+            }
+            (DropKind::TForm, Page::Documents) => notes.push(Notification::warning(tr_with(
+                "io-drop-open-part-studio",
+                &[("name", &name)],
+            ))),
             (DropKind::Model | DropKind::Mesh, Page::PartStudio) => {
                 crate::import_dialog::import_dropped(world, &path)
             }
@@ -351,5 +370,7 @@ mod tests {
         assert_eq!(k("bracket.stl"), Some(DropKind::Mesh));
         assert_eq!(k("project.CADRS"), Some(DropKind::Native));
         assert_eq!(k("notes.txt"), None);
+        assert_eq!(k("vase.tform.json"), Some(DropKind::TForm));
+        assert_eq!(k("plain.json"), None);
     }
 }

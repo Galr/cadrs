@@ -820,6 +820,37 @@ fn import_file(world: &mut World, p: &tools::ImportFile) -> Result<Value, String
         crate::move_document::open_document(world, file.document.id);
         return describe(world);
     }
+    // A TForm document: its T-spline bodies as a Form feature in a new Part Studio.
+    if cadrs_core::tspline_form::is_tform_file(&file_name) {
+        let bytes = cadrs_fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let text = String::from_utf8(bytes).map_err(|_| format!("{file_name}: not text"))?;
+        let name = p.name.clone().unwrap_or_else(|| {
+            file_name
+                .trim_end_matches(".json")
+                .trim_end_matches(".tform")
+                .to_string()
+        });
+        let mut d = doc_mut(world)?;
+        let id = ElementId::new();
+        let after = d.active;
+        d.execute(&AddElement {
+            id,
+            kind: NewElementKind::PartStudio,
+            name: Some(name),
+            after,
+        })
+        .map_err(|e| e.to_string())?;
+        if let Err(e) = d.execute(&cadrs_core::tspline_form::AddTSplineForm {
+            element: id,
+            feature: cadrs_core::ids::FeatureId::new(),
+            text,
+        }) {
+            d.undo();
+            return Err(e.to_string());
+        }
+        d.set_active(id);
+        return describe(world);
+    }
     if ImportFormat::of_file_name(&file_name).is_none() {
         return Err(format!("{file_name}: not a file Import reads"));
     }
@@ -1703,6 +1734,16 @@ fn template(kind: &str) -> Option<FeatureKind> {
                 kind: cadrs_core::direct_edit::DirectEditKind::MoveFace,
                 ..Default::default()
             }),
+            // a T-spline Form: TForm's plane, cylinder or torus at its default size
+            "tsplineform" | "form" | "formplane" => FeatureKind::TSplineForm(
+                cadrs_core::tspline_form::TSplineFormFeature::primitive("plane")?,
+            ),
+            "formcylinder" => FeatureKind::TSplineForm(
+                cadrs_core::tspline_form::TSplineFormFeature::primitive("cylinder")?,
+            ),
+            "formtorus" => FeatureKind::TSplineForm(
+                cadrs_core::tspline_form::TSplineFormFeature::primitive("torus")?,
+            ),
             _ => return None,
         },
     )
@@ -2571,10 +2612,37 @@ fn export_step(world: &mut World, p: &tools::ExportStep) -> Result<Value, String
 
 /// Exports the active tab's parts (a Part Studio's, or an Assembly's instances where they are)
 /// as the export dialog does, its format by the path's extension.
+/// The active Part Studio's T-spline Forms as one TForm document (`.tform.json`), to keep
+/// editing them in TForm.
+fn export_tform(world: &mut World, path: &std::path::Path) -> Result<Value, String> {
+    use cadrs_core::tspline_form::TSplineFormFeature;
+    let d = doc(world)?;
+    let e = d.active_element().ok_or("no tab is active")?;
+    let mut all = TSplineFormFeature::default();
+    for f in e.features().iter() {
+        if let FeatureKind::TSplineForm(x) = &f.kind {
+            all.bodies.extend(x.bodies.iter().cloned());
+        }
+    }
+    if all.bodies.is_empty() {
+        return Err(format!("{:?} has no T-spline forms", e.name));
+    }
+    let text = all.to_tform()?;
+    cadrs_fs::write(path, text.as_bytes()).map_err(|e| format!("{}: {e}", path.display()))?;
+    Ok(serde_json::json!({ "path": path.display().to_string(), "bodies": all.bodies.len() }))
+}
+
 fn export_file(world: &mut World, p: &tools::ExportFile) -> Result<Value, String> {
     use crate::export_dialog::ExportSource;
     use cadrs_core::rebuild::exchange::{ExportRequest, ModelFormat};
     let path = std::path::Path::new(&p.path);
+    if path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .is_some_and(cadrs_core::tspline_form::is_tform_file)
+    {
+        return export_tform(world, path);
+    }
     let ext = path
         .extension()
         .and_then(|e| e.to_str())

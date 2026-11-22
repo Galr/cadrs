@@ -784,6 +784,7 @@ impl Feature {
             FeatureKind::SheetMetal(x) => x.problem().is_none(),
             FeatureKind::SheetMetalTool(x) => x.problem().is_none(),
             FeatureKind::FlatExtrude(x) => x.problem().is_none(),
+            FeatureKind::TSplineForm(x) => x.problem().is_none(),
         }
     }
 
@@ -829,6 +830,7 @@ impl Feature {
             FeatureKind::SheetMetal(x) => x.problem(),
             FeatureKind::SheetMetalTool(x) => x.problem(),
             FeatureKind::FlatExtrude(x) => x.problem(),
+            FeatureKind::TSplineForm(x) => x.problem(),
         }
     }
 
@@ -995,6 +997,7 @@ impl Feature {
             | FeatureKind::Draft(_)
             | FeatureKind::Transform(_)
             | FeatureKind::Import(_)
+            | FeatureKind::TSplineForm(_)
             | FeatureKind::Variable(_) => {}
             FeatureKind::Image(x) => x.parents().into_iter().for_each(&mut add),
             FeatureKind::Derived(x) => x.parents().into_iter().for_each(&mut add),
@@ -1215,6 +1218,9 @@ pub enum FeatureKind {
     /// An extrude of a flat-pattern sketch, Add or Remove in the flat (P3I.6, SM14;
     /// [`crate::sheetmetal_flat`]). Shown as "Extrude".
     FlatExtrude(crate::sheetmetal_flat::FlatExtrudeFeature),
+    /// Freeform bodies modelled as T-splines (TForm's models; [`crate::tspline_form`]). Kept
+    /// last, so documents and shared edits from before it read the same.
+    TSplineForm(crate::tspline_form::TSplineFormFeature),
 }
 
 /// A closed region of a sketch, as an extrude refers to it: the sketch, the curves on its outer

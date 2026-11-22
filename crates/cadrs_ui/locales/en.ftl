@@ -948,6 +948,12 @@ shell-tool-revolve = Revolve (Shift+W)
 shell-tool-sweep = Sweep
 shell-tool-loft = Loft
 shell-tool-thicken = Thicken
+# The T-spline Form tool (TForm's form modelling) and its menu.
+shell-tool-tspline-form = Form (T-spline)
+shell-tool-tspline-plane = Plane form
+shell-tool-tspline-cylinder = Cylinder form
+shell-tool-tspline-torus = Torus form
+shell-tool-tspline-open = Open TForm file…
 shell-tool-fillet = Fillet (Shift+F)
 shell-tool-chamfer = Chamfer
 shell-tool-draft = Draft

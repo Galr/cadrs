@@ -132,6 +132,7 @@ cadrs_icons = { path = "crates/cadrs_icons" }
 cadrs_cam = { path = "crates/cadrs_cam" }
 cadrs_sketch = { path = "crates/cadrs_sketch" }
 cadrs_vars = { path = "crates/cadrs_vars" }
+cadrs_tspline = { path = "crates/cadrs_tspline" }
 cadrs_ui = { path = "crates/cadrs_ui" }
 cadrs_net = { path = "crates/cadrs_net" }
 cadrs_app = { path = "crates/cadrs_app" }

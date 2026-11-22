@@ -2617,6 +2617,8 @@ impl Rebuilder {
             #[cfg(feature = "brep")]
             FeatureKind::Import(x) => self.import(f.id, x, state).unwrap_or_else(fail),
             #[cfg(feature = "brep")]
+            FeatureKind::TSplineForm(x) => self.tspline_form(f.id, x, state).unwrap_or_else(fail),
+            #[cfg(feature = "brep")]
             FeatureKind::Image(x) => self.picture(f.id, x, state).unwrap_or_else(fail),
             #[cfg(feature = "brep")]
             FeatureKind::Thicken(x) => self.thicken(before, f.id, x, state).unwrap_or_else(fail),
@@ -2710,7 +2712,7 @@ impl Rebuilder {
                 fail("This feature needs the solid-modelling kernel".into())
             }
             #[cfg(not(feature = "brep"))]
-            FeatureKind::Import(_) | FeatureKind::Derived(_) => {
+            FeatureKind::Import(_) | FeatureKind::Derived(_) | FeatureKind::TSplineForm(_) => {
                 fail("Imports need the solid-modelling kernel".into())
             }
             #[cfg(not(feature = "brep"))]

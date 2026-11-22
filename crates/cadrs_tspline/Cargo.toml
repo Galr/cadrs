@@ -1,0 +1,11 @@
+[package]
+name = "cadrs_tspline"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Cubic T-spline surfaces on a T-mesh (Sederberg et al.): evaluation and exact conversion to NURBS, for the Form feature"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true

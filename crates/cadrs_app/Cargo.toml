@@ -11,6 +11,8 @@ blake3.workspace = true
 resvg.workspace = true
 bevy.workspace = true
 cadrs_core.workspace = true
+# The T-spline Form environment (`tspline_ui`).
+cadrs_tspline.workspace = true
 cadrs_sheetmetal.workspace = true
 cadrs_sketch.workspace = true
 cadrs_vars.workspace = true
